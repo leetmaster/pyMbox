@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 @app.route("/")
 
-def monitoring():
+def application():
 	# Nicely declare values for easy maintenance
 	HOST = "mboxnaprd.jnj.com"
 	USER = "LFSGB_SUPPORT"
@@ -37,7 +37,7 @@ def monitoring():
 
 	# 1.1 List the directories
 	for i in data:
-		print (i)
+		return (i)
 
 	# 2. Open each directory 
 
@@ -51,3 +51,6 @@ def monitoring():
 
 	# Politely close the connection
 	srv.close()
+
+if __name__ == __"main"__:
+	app.run()
