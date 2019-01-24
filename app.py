@@ -13,9 +13,13 @@
 import pysftp
 
 # Nicely declare values for easy maintenance
-HOST = "mboxnaprd.jnj.com"
-USER = "LFSGB_SUPPORT"
-PASSWORD = "Lf5jde18!"
+#HOST = "mboxnaprd.jnj.com"
+#USER = "LFSGB_SUPPORT"
+#PASSWORD = "Lf5jde18!"
+
+#HOST = "jruben.ga"
+#USER = "eztigma"
+#PASSWORD = "Z0ge0057"
 
 # Override hostkey although it will still send a warning
 cnopts = pysftp.CnOpts()
