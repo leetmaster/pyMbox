@@ -8,7 +8,10 @@
 ###############################################################################
 
 #pip install pysftp
+from flask import Flask
+app = Flask(__name__)
 
+@app.route("/")
 # Requires pysftp instead of FTP module due to port 22
 import pysftp
 
