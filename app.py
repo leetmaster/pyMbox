@@ -1,9 +1,9 @@
 ###############################################################################
 #                                                                             #
 # Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 0.3.1                                                               #
+# Version 1.3.1                                                               #
 # Auth jgarciar                                                               #
-# Date 2019/01/24                                                             #
+# Date 2019/02/01                                                             #
 #                                                                             #
 ###############################################################################
 
@@ -51,6 +51,8 @@ cnopts.hostkeys = None
 
 # Setting an appropriate waiting time (8 hours)
 segs = 28800
+
+print("Let's get started")
 
 # Open the file
 f = open("body.txt","w+")
@@ -147,4 +149,5 @@ s.close()
 f.close()
 
 # Stop the application for 8 hours
+print("I'm going to bed now")
 time.sleep(segs)
