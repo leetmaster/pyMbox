@@ -1,4 +1,4 @@
-email.mime.text
+email
 pysftp
 datetime
 smtplib 
