@@ -1,3 +1,4 @@
+cStringIO
 email==4.0.2
 pysftp==0.2.9
 datetime==2.3
