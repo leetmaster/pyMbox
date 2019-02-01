@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 0.3.1                                                                 #
+# Version 0.3.1                                                               #
 # Auth jgarciar                                                               #
 # Date 2019/01/24                                                             #
 #                                                                             #
