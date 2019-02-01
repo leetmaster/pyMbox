@@ -1,56 +1,147 @@
 ###############################################################################
 #                                                                             #
 # Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 0.1                                                                 #
+# Version 0.3.1                                                                 #
 # Auth jgarciar                                                               #
 # Date 2019/01/24                                                             #
 #                                                                             #
 ###############################################################################
 
-
-# Requires pysftp instead of FTPlib module due to port 22
+from email.mime.text import MIMEText
+# Requiered to access SFTP using port 22
 import pysftp
+# Required to display the date and time
+import datetime
+# Required to send mails
+import smtplib 
 
-#pip install pysftp
-from flask import Flask
-app = Flask(__name__)
+# nicely declare variables for easy maintenance
+mailHost = 'smtp.gmail.com'
+port = 587
+mailUser = 'pymbox.ms@gmail.com'
+mailPasswd= 'ylkrlhfwvofybvpx'
+to = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com','DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
+#to = ['josegarcia@grupoassa.com','sapolonio@grupoassa.com','gahernandez@grupoassa.com','bmartinez@grupoassa.com','marhernandez@grupoassa.com','pdolengiew@grupoassa.com']
+# Cool variable to save current time 
+current_time = datetime.datetime.today()
+now = datetime.datetime.now()
 
-@app.route("/")
+# Nicely declare the host values for easy maintenance
+HOST = "mboxnaprd.jnj.com"
+USER = "LFSGB_SUPPORT"
+PASSWORD = "Lf5jde18!"
 
-def application():
-	# Nicely declare values for easy maintenance
-	HOST = "jruben.ga"
-	USER = "eztigma"
-	PASSWORD = "Z0ge0057"
+# Create a cool function for writing the file inside the cycles
+def fileWrite(a,b):
+        f.write(a)
+        f.write("\n")
+        temp = str(b).split(" ",)
+        f.write(temp[30])
+        f.write("\n")
+        return;
 
-	# Override hostkey although it will still send a warning
-	cnopts = pysftp.CnOpts()
-	cnopts.hostkeys = None
 
-	# Execute actual SFTP connection
-	srv = pysftp.Connection(host=HOST, username=USER, password=PASSWORD, cnopts=cnopts)
+# Override hostkey although it will still send a warning
+cnopts = pysftp.CnOpts()
+cnopts.hostkeys = None
 
-	# Space for automation code
-	# TO DO:
-	# 1. Read the directories and save them in 'data' variable
-	data = srv.listdir()
+# Carefully build the file name to save the output
+#fd = now.strftime("%Y-%m-%d")
+#a = "Mbox_"
+#b = ".txt"
 
-	# 1.1 List the directories
-	for i in data:
-		return (i)
+#n = a + fd + b
 
-	# 2. Open each directory 
+# Open the file
+f = open("body.txt","w+")
 
-	# 2.1 Open "working" directory
+# Write the title to the file
+f.write("Mbox Monitor & Support\n")
+f.write("Version 0.3.1\n")
 
-	# 2.3 Look for files in each directory
+# Printing value of today. 
+f.write ("Current time is: ") 
+f.write (str(current_time)) 
+f.write("\n")
+f.write("\n")
+# Execute actual SFTP connection
+srv = pysftp.Connection(host=HOST, username=USER, password=PASSWORD, cnopts=cnopts)
 
-	# 2.4 If file exists send and e-mail with folder and file name
+# Space for automation code
+# TO DO:
+# 1. Read the directories and save them in 'data' variable
+# 1.1 current directory /
 
-	# 3.1 If timestamp > 6 hrs send an "escalation" e-mail
+data = srv.listdir()
 
-	# Politely close the connection
-	srv.close()
+# 2. Open each directory 
+for i in data:
+        srv.cwd(i)
 
-if __name__ == __"main"__:
-	app.run()
+# 2.1 If there's a "working" directory open it
+        if srv.listdir():       
+                srv.cwd("working")
+                f.write(srv.pwd)
+                f.write("\n")
+
+# 2.3 Patiently look for files in each directory
+                wrkdir = srv.listdir_attr()
+
+# 2.3.1 Inform if there are files waiting to be processed
+                if not wrkdir: f.write("All files have been processed\n")
+
+                else:
+                        for j in wrkdir:
+                                writeFile(j,i)
+                                
+
+# 2.1.1 If there's no "working" directory smartly do the same one level above
+        else:
+                f.write(srv.pwd)
+                f.write("\n")
+                wrkdir = srv.listdir_attr()
+		
+                if not wrkdir: f.write("All files have been processed\n")
+
+                else:
+                        for j in wrkdir:
+                                writeFile(j,i)
+
+# 2.4 Efficiently return to root directory to star again
+        srv.cwd("/")
+
+# Politely close the SFTP connection
+srv.close()
+
+
+# creates SMTP session 
+s = smtplib.SMTP(mailHost, port)
+
+s.ehlo()  
+# start TLS for security  
+s.starttls() 
+#s.connect(host,port)
+# Authentication 
+s.login(mailUser, mailPasswd) 
+  
+# return to beginning of the file
+f.seek(0)
+
+# building the message like LEGO bricks
+msg = MIMEText(f.read())
+
+# me == the sender's email address
+# you == the recipient's email address
+msg['Subject'] = 'Mbox Monitor and Support'
+msg['From'] = 'Mbox Monitor and Support'
+msg['To'] = ", ".join(to)
+
+  
+# sending the mail 
+s.sendmail(mailUser, to, msg.as_string())
+
+# terminating the SMTP session 
+s.close() 
+
+# Close the file
+f.close()
