@@ -15,14 +15,17 @@ import pysftp
 import datetime
 # Required to send mails
 import smtplib 
+# Required for time
+import time
 
 # nicely declare variables for easy maintenance
 mailHost = 'smtp.gmail.com'
 port = 587
 mailUser = 'pymbox.ms@gmail.com'
 mailPasswd= 'ylkrlhfwvofybvpx'
-to = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com','DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
-#to = ['josegarcia@grupoassa.com','sapolonio@grupoassa.com','gahernandez@grupoassa.com','bmartinez@grupoassa.com','marhernandez@grupoassa.com','pdolengiew@grupoassa.com']
+#to = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com','DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
+# sending to me as test
+to = ['josegarcia@grupoassa.com']
 # Cool variable to save current time 
 current_time = datetime.datetime.today()
 now = datetime.datetime.now()
@@ -46,12 +49,8 @@ def fileWrite(a,b):
 cnopts = pysftp.CnOpts()
 cnopts.hostkeys = None
 
-# Carefully build the file name to save the output
-#fd = now.strftime("%Y-%m-%d")
-#a = "Mbox_"
-#b = ".txt"
-
-#n = a + fd + b
+# Setting an appropriate waiting time (8 hours)
+segs = 28800
 
 # Open the file
 f = open("body.txt","w+")
@@ -146,3 +145,6 @@ s.close()
 
 # Close the file
 f.close()
+
+# Stop the application for 8 hours
+time.sleep(segs)
