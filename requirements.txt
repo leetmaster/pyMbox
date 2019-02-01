@@ -1,3 +1,4 @@
+io
 email>=2.5.8
 pysftp==0.2.9
 datetime==2.3
