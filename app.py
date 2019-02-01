@@ -7,6 +7,7 @@
 #                                                                             #
 ###############################################################################
 
+# Required for formatting the mail
 from email.mime.text import MIMEText
 # Requiered to access SFTP using port 22
 import pysftp
