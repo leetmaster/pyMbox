@@ -1,4 +1,5 @@
-MIMEText
-pysftp
-datetime
-smtplib 
+
+email==2.2
+pysftp==0.2.9
+datetime==2.3
+smtplib ==2.6
