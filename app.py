@@ -119,6 +119,9 @@ for i in data:
 # 2.4 Efficiently return to root directory to star again
         srv.cwd("/")
 
+# Support
+f.write("App support: jgarciar@its.jnj.com/\")
+
 # Politely close the SFTP connection
 srv.close()
 
@@ -156,6 +159,6 @@ s.close()
 # Close the file
 f.close()
 
-# Stop the application for 8 hours
+# Stop the application for 6 hours
 print("dary!")
 time.sleep(segs)
