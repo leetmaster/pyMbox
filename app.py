@@ -49,17 +49,17 @@ def fileWrite(a,b):
 cnopts = pysftp.CnOpts()
 cnopts.hostkeys = None
 
-# Setting an appropriate waiting time (8 hours)
-segs = 28800
+# Setting an appropriate waiting time (6 hours)
+segs = 21600
 
-print("Let's get started")
+print("This is going to be legen... wait for it")
 
 # Open the file
 f = open("body.txt","w+")
 
 # Write the title to the file
 f.write("Mbox Monitor & Support\n")
-f.write("Version 0.3.1\n")
+f.write("Version 1.3.1\n")
 
 # Printing value of today. 
 f.write ("Current time is: ") 
@@ -149,5 +149,5 @@ s.close()
 f.close()
 
 # Stop the application for 8 hours
-print("I'm going to bed now")
+print("dary!")
 time.sleep(segs)
