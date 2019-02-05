@@ -25,15 +25,16 @@ mailUser = 'pymbox.ms@gmail.com'
 mailPasswd= 'ylkrlhfwvofybvpx'
 
 # Users to nag with the notification
-#to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
-#cc = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com']
+to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
+cc = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com']
 
 # sending to me as test
-to = ['jgarciar@its.jnj.com']
-cc = ['josegarcia@grupoassa.com']
+# to = ['jgarciar@its.jnj.com']
+# cc = ['josegarcia@grupoassa.com']
 
 # Cool variable to save current time 
 current_time = datetime.datetime.today()
+# No need to adjust TMZ
 now = datetime.datetime.now()
 
 # Nicely declare the host values for easy maintenance
