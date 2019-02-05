@@ -26,7 +26,7 @@ mailPasswd= 'ylkrlhfwvofybvpx'
 
 # Users to nag with the notification
 to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
-cc = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com']
+cc = ['jgarciar@its.jnj.com']
 
 # sending to me as test
 # to = ['jgarciar@its.jnj.com']
@@ -120,7 +120,7 @@ for i in data:
         srv.cwd("/")
 
 # Support
-f.write("\nApp support: jgarciar@its.jnj.com\n")
+f.write("\n\nFeedback: jgarciar@its.jnj.com\n")
 
 # Politely close the SFTP connection
 srv.close()
