@@ -23,9 +23,15 @@ mailHost = 'smtp.gmail.com'
 port = 587
 mailUser = 'pymbox.ms@gmail.com'
 mailPasswd= 'ylkrlhfwvofybvpx'
-#to = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com','DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
+
+# Users to nag with the notification
+#to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
+#cc = ['jgarciar@its.jnj.com','sapoloni@its.jnj.com']
+
 # sending to me as test
-to = ['josegarcia@grupoassa.com']
+to = ['jgarciar@its.jnj.com']
+cc = ['josegarcia@grupoassa.com']
+
 # Cool variable to save current time 
 current_time = datetime.datetime.today()
 now = datetime.datetime.now()
@@ -137,10 +143,11 @@ msg = MIMEText(f.read())
 msg['Subject'] = 'Mbox Monitor and Support'
 msg['From'] = 'Mbox Monitor and Support'
 msg['To'] = ", ".join(to)
+msg['Cc'] = ", ".join(cc)
 
   
 # sending the mail 
-s.sendmail(mailUser, to, msg.as_string())
+s.sendmail(mailUser, (to+Cc) , msg.as_string())
 
 # terminating the SMTP session 
 s.close() 
