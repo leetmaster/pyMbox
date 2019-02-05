@@ -120,7 +120,7 @@ for i in data:
         srv.cwd("/")
 
 # Support
-f.write("App support: jgarciar@its.jnj.com/\")
+f.write("\nApp support: jgarciar@its.jnj.com\n")
 
 # Politely close the SFTP connection
 srv.close()
