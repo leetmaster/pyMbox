@@ -147,7 +147,7 @@ msg['Cc'] = ", ".join(cc)
 
   
 # sending the mail 
-s.sendmail(mailUser, (to+Cc) , msg.as_string())
+s.sendmail(mailUser, (to+cc) , msg.as_string())
 
 # terminating the SMTP session 
 s.close() 
