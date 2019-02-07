@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 1.3.1                                                               #
+# Version 1.3.2                                                               #
 # Auth jgarciar                                                               #
 # Date 2019/02/01                                                             #
 #                                                                             #
@@ -66,7 +66,7 @@ f = open("body.txt","w+")
 
 # Write the title to the file
 f.write("Mbox Monitor & Support\n")
-f.write("Version 1.3.1\n")
+f.write("Version 1.3.2\n")
 
 # Printing value of today. 
 f.write ("Current time is: ") 
@@ -118,6 +118,11 @@ for i in data:
 
 # 2.4 Efficiently return to root directory to star again
         srv.cwd("/")
+
+# Obsessively record the exit time
+end_time = datetime.datetime.today()
+f.write ("\n\nEnding time is: ") 
+f.write (str(end_time))
 
 # Support
 f.write("\n\nFeedback: jgarciar@its.jnj.com\n")
