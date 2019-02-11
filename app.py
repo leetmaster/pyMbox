@@ -1,7 +1,7 @@
 ###############################################################################
 #                                                                             #
 # Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 1.3.2                                                               #
+# Version 1.3.3                                                               #
 # Auth jgarciar                                                               #
 # Date 2019/02/01                                                             #
 #                                                                             #
@@ -13,9 +13,11 @@ from email.mime.text import MIMEText
 import pysftp
 # Required to display the date and time
 import datetime
+# Required to save execution time 
+from datetime import timedelta
 # Required to send mails
 import smtplib 
-# Required for time
+# Required for time operations
 import time
 
 # nicely declare variables for easy maintenance
@@ -23,6 +25,7 @@ mailHost = 'smtp.gmail.com'
 port = 587
 mailUser = 'pymbox.ms@gmail.com'
 mailPasswd= 'ylkrlhfwvofybvpx'
+
 
 # Users to nag with the notification
 to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
@@ -42,22 +45,15 @@ HOST = "mboxnaprd.jnj.com"
 USER = "LFSGB_SUPPORT"
 PASSWORD = "Lf5jde18!"
 
-# Create a cool function for writing the file inside the cycles
-def fileWrite(a,b):
-        f.write(a)
-        f.write("\n")
-        temp = str(b).split(" ",)
-        f.write(temp[30])
-        f.write("\n")
-        return;
-
-
 # Override hostkey although it will still send a warning
 cnopts = pysftp.CnOpts()
 cnopts.hostkeys = None
 
 # Setting an appropriate waiting time (6 hours)
 segs = 21600
+
+# Start counting execution time
+start_time = time.monotonic()
 
 print("This is going to be legen... wait for it")
 
@@ -101,8 +97,9 @@ for i in data:
 
                 else:
                         for j in wrkdir:
-                                fileWrite(j,i)
-                                
+                                f.write(j + "\n")
+                                temp = str(i).split(" ",)
+                                f.write(temp[30]+"\n")
 
 # 2.1.1 If there's no "working" directory smartly do the same one level above
         else:
@@ -114,15 +111,20 @@ for i in data:
 
                 else:
                         for j in wrkdir:
-                                fileWrite(j,i)
+                                f.write(j + "\n")
+                                temp = str(i).split(" ",)
+                                f.write(temp[30]+"\n")
 
 # 2.4 Efficiently return to root directory to star again
         srv.cwd("/")
 
-# Obsessively record the exit time
-end_time = datetime.datetime.today()
-f.write ("\n\nEnding time is: ") 
-f.write (str(end_time))
+# Obsessively count the program execution
+split_time = time.monotonic()
+
+split = timedelta(seconds=split_time - start_time)
+
+f.write("\nThis monitoring took: ")
+f.write(split)
 
 # Support
 f.write("\n\nFeedback: jgarciar@its.jnj.com\n")
@@ -137,7 +139,7 @@ s = smtplib.SMTP(mailHost, port)
 s.ehlo()  
 # start TLS for security  
 s.starttls() 
-#s.connect(host,port)
+
 # Authentication 
 s.login(mailUser, mailPasswd) 
   
@@ -166,4 +168,11 @@ f.close()
 
 # Stop the application for 6 hours
 print("dary!")
-time.sleep(segs)
+
+# Stop counting execution time
+end_time = time.monotonic()
+
+excess = end_time - start_time
+
+# send to sleep for 6 hours minus the excess time
+time.sleep(segs - excess)
