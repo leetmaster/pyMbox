@@ -97,7 +97,8 @@ for i in data:
 
                 else:
                         for j in wrkdir:
-                                f.write(j + "\n")
+                                f.write(j)
+				f.write("\n")
 #                                temp = str(i).split(" ",)
 #                                f.write(temp[30]+"\n")
 
@@ -111,7 +112,8 @@ for i in data:
 
                 else:
                         for j in wrkdir:
-                                f.write(j + "\n")
+                                f.write(j)
+				f.write("\n")
 #                                temp = str(i).split(" ",)
 #                                f.write(temp[30]+"\n")
 
@@ -121,7 +123,9 @@ for i in data:
 # Obsessively count the program execution
 split_time = time.monotonic()
 
-split = timedelta(seconds=split_time - start_time)
+print(timedelta(seconds=split_time - start_time))
+
+split = str(timedelta(seconds=split_time - start_time))
 
 f.write("\nThis monitoring took: ")
 f.write(split)
