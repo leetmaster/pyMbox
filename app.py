@@ -98,8 +98,8 @@ for i in data:
                 else:
                         for j in wrkdir:
                                 f.write(j + "\n")
-                                temp = str(i).split(" ",)
-                                f.write(temp[30]+"\n")
+#                                temp = str(i).split(" ",)
+#                                f.write(temp[30]+"\n")
 
 # 2.1.1 If there's no "working" directory smartly do the same one level above
         else:
@@ -112,8 +112,8 @@ for i in data:
                 else:
                         for j in wrkdir:
                                 f.write(j + "\n")
-                                temp = str(i).split(" ",)
-                                f.write(temp[30]+"\n")
+#                                temp = str(i).split(" ",)
+#                                f.write(temp[30]+"\n")
 
 # 2.4 Efficiently return to root directory to star again
         srv.cwd("/")
