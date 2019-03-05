@@ -19,6 +19,8 @@ from datetime import timedelta
 import smtplib 
 # Required for time operations
 import time
+# Required for timezone operations
+from pytz import timezone
 
 # nicely declare variables for easy maintenance
 mailHost = 'smtp.gmail.com'
@@ -36,9 +38,7 @@ cc = ['jgarciar@its.jnj.com']
 # cc = ['josegarcia@grupoassa.com']
 
 # Cool variable to save current time 
-current_time = datetime.datetime.today()
-# No need to adjust TMZ
-now = datetime.datetime.now()
+current_time = datetime.datetime.now(timezone('EST'))
 
 # Nicely declare the host values for easy maintenance
 HOST = "mboxnaprd.jnj.com"
