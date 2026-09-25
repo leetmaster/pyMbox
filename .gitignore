@@ -1,0 +1,9 @@
+__pycache__/
+.venv/ 
+.vscode/
+*.pyc
+.clinerules
+config.ini
+body.txt
+.pytest_cache/
+.env
