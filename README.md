@@ -8,6 +8,24 @@ The code is pushed from a GitHub* repository into the application platform.
 
 The build is deployed on OpenShift* to run automatically every 6 hours.
 
+## Scheduling
+
+The script is orchestrated as a **Prefect flow** (`mbox_monitor_flow` in
+`app.py`). The flow runs once per invocation; the 6-hour cadence is applied
+through a Prefect deployment schedule instead of an in-process `time.sleep`.
+
+Create a deployment that runs every 6 hours:
+
+```bash
+prefect deploy app.py:mbox_monitor_flow --interval 21600 --name mbox-monitor-every-6h
+```
+
+Then start a worker to execute the scheduled runs:
+
+```bash
+prefect worker start --pool default-agent-pool
+```
+
 ### Glossary
 __SFTP__ - Secure File Transfer Protocol
 

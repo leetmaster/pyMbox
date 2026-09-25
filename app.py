@@ -1,174 +1,296 @@
-###############################################################################
-#                                                                             #
-# Automatic MBOX MONITOR & SUPPORT script                                     #
-# Version 1.3.3                                                               #
-# Auth jgarciar                                                               #
-# Date 2019/02/01                                                             #
-#                                                                             #
-###############################################################################
+"""Automatic MBOX Monitor & Support script.
 
-# Required for formatting the mail
-from email.mime.text import MIMEText
-# Requiered to access SFTP using port 22
-import pysftp
-# Required to display the date and time
+This module connects to an M-Box SFTP server, inspects the ``working``
+subdirectory of every top-level directory, builds a report of the files
+waiting to be processed and sends that report by e-mail using Gmail's SMTP
+server.
+
+The script is orchestrated as a Prefect flow. The flow runs once per
+invocation; the 6-hour cadence is applied through a Prefect deployment
+schedule (see ``README.md``).
+
+All configuration is read from a ``.env`` file via ``python-dotenv`` so the
+code is plug-and-play and no secrets are stored in source.
+"""
+
+from __future__ import annotations
+
 import datetime
-# Required to save execution time 
-from datetime import timedelta
-# Required to send mails
-import smtplib 
-# Required for time operations
+import logging
+import os
+import smtplib
 import time
-# Required for timezone operations
+from dataclasses import dataclass
+from datetime import timedelta
+from email.mime.text import MIMEText
+from typing import TYPE_CHECKING, Optional
+
+from dotenv import load_dotenv
+from prefect import flow, task
 from pytz import timezone
 
-# nicely declare variables for easy maintenance
-mailHost = 'smtp.gmail.com'
-port = 587
-mailUser = 'pymbox.ms@gmail.com'
-mailPasswd= 'ylkrlhfwvofybvpx'
+if TYPE_CHECKING:
+    import pysftp
+
+# ---------------------------------------------------------------------------
+# Logging setup
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+# Script version, kept in source (not a secret nor environment-dependent).
+VERSION = "1.4.0"
 
 
-# Users to nag with the notification
-to = ['DL-MDDMX-Monitoring-Team@ITS.JNJ.com']
-cc = ['jgarciar@its.jnj.com']
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+@dataclass
+class AppConfig:
+    """Container for all runtime configuration loaded from the environment.
 
-# sending to me as test
-# to = ['jgarciar@its.jnj.com']
-# cc = ['josegarcia@grupoassa.com']
+    Attributes:
+        mail_host: SMTP server hostname.
+        mail_port: SMTP server port.
+        mail_user: SMTP authentication username (sender address).
+        mail_passwd: SMTP authentication password / app password.
+        mail_from: ``From`` header value for the outgoing e-mail.
+        mail_to: Primary recipient address.
+        mail_cc: Carbon-copy recipient address.
+        mail_subject: Subject of the outgoing e-mail.
+        sftp_host: SFTP server hostname.
+        sftp_user: SFTP authentication username.
+        sftp_password: SFTP authentication password.
+        tz_name: Timezone name (e.g. ``"EST"``) used for timestamps.
+        body_file: Path of the file where the report is written.
+        feedback_email: Contact address shown in the report footer.
+    """
 
-# Cool variable to save current time 
-current_time = datetime.datetime.now(timezone('EST'))
+    mail_host: str
+    mail_port: int
+    mail_user: str
+    mail_passwd: str
+    mail_from: str
+    mail_to: str
+    mail_cc: str
+    mail_subject: str
+    sftp_host: str
+    sftp_user: str
+    sftp_password: str
+    tz_name: str
+    body_file: str
+    feedback_email: str
 
-# Nicely declare the host values for easy maintenance
-HOST = "mboxnaprd.jnj.com"
-USER = "LFSGB_SUPPORT"
-PASSWORD = "Lf5jde18!"
 
-# Override hostkey although it will still send a warning
-cnopts = pysftp.CnOpts()
-cnopts.hostkeys = None
+def load_config() -> AppConfig:
+    """Load configuration from environment variables.
 
-# Setting an appropriate waiting time (6 hours)
-segs = 21600
+    Returns:
+        The populated :class:`AppConfig` instance.
 
-# Start counting execution time
-start_time = time.monotonic()
+    Raises:
+        RuntimeError: If a required variable is missing or invalid.
+    """
+    load_dotenv()
 
-print("This is going to be legen... wait for it")
+    def _get(key: str, default: Optional[str] = None) -> str:
+        value = os.getenv(key, default)
+        if value is None:
+            raise RuntimeError(f"Missing required environment variable: {key}")
+        return value
 
-# Open the file
-f = open("body.txt","w+")
+    try:
+        mail_port = int(_get("MAIL_PORT", "587"))
+    except ValueError as exc:
+        raise RuntimeError("MAIL_PORT must be an integer.") from exc
 
-# Write the title to the file
-f.write("Mbox Monitor & Support\n")
-f.write("Version 1.3.2\n")
+    return AppConfig(
+        mail_host=_get("MAIL_HOST"),
+        mail_port=mail_port,
+        mail_user=_get("MAIL_USER"),
+        mail_passwd=_get("MAIL_PASSWD"),
+        mail_from=_get("MAIL_FROM", "Mbox Monitor and Support"),
+        mail_to=_get("MAIL_TO"),
+        mail_cc=_get("MAIL_CC", ""),
+        mail_subject=_get("MAIL_SUBJECT", "Mbox Monitor and Support"),
+        sftp_host=_get("SFTP_HOST"),
+        sftp_user=_get("SFTP_USER"),
+        sftp_password=_get("SFTP_PASSWORD"),
+        tz_name=_get("TIMEZONE", "EST"),
+        body_file=_get("BODY_FILE", "body.txt"),
+        feedback_email=_get("FEEDBACK_EMAIL", ""),
+    )
 
-# Printing value of today. 
-f.write ("Current time is: ") 
-f.write (str(current_time)) 
-f.write("\n")
-f.write("\n")
-# Execute actual SFTP connection
-srv = pysftp.Connection(host=HOST, username=USER, password=PASSWORD, cnopts=cnopts)
 
-# Space for automation code
-# TO DO:
-# 1. Read the directories and save them in 'data' variable
-# 1.1 current directory /
+# ---------------------------------------------------------------------------
+# Tasks
+# ---------------------------------------------------------------------------
+@task
+def scan_sftp(config: AppConfig) -> str:
+    """Connect to the SFTP server and build a report of pending files.
 
-data = srv.listdir()
+    For every top-level directory the task looks for a ``working``
+    subdirectory. If present it lists the files inside it; otherwise it
+    lists the files in the top-level directory itself. The resulting report
+    is returned as a string.
 
-# 2. Open each directory 
-for i in data:
-        srv.cwd(i)
+    Args:
+        config: The application configuration.
 
-# 2.1 If there's a "working" directory open it
-        if srv.listdir():       
+    Returns:
+        A text report describing the files found on the server.
+    """
+    report_lines: list[str] = []
+    cnopts = pysftp.CnOpts()
+    cnopts.hostkeys = None
+
+    srv: Optional[pysftp.Connection] = None
+    try:
+        srv = pysftp.Connection(
+            host=config.sftp_host,
+            username=config.sftp_user,
+            password=config.sftp_password,
+            cnopts=cnopts,
+        )
+        logger.info("Connected to SFTP server %s", config.sftp_host)
+
+        for directory in srv.listdir():
+            srv.cwd(directory)
+
+            entries = srv.listdir()
+            if entries and "working" in entries:
                 srv.cwd("working")
-                f.write(srv.pwd)
-                f.write("\n")
 
-# 2.3 Patiently look for files in each directory
-                wrkdir = srv.listdir_attr()
+            report_lines.append(srv.pwd)
 
-# 2.3.1 Inform if there are files waiting to be processed
-                if not wrkdir: f.write("All files have been processed\n")
+            attrs = srv.listdir_attr()
+            if not attrs:
+                report_lines.append("All files have been processed")
+            else:
+                for entry in attrs:
+                    report_lines.append(str(entry))
 
-                else:
-                        for j in wrkdir: f.write("%s\n" % j)
+            # Return to root before processing the next directory.
+            srv.cwd("/")
+    except Exception as exc:  # noqa: BLE001 - log and re-raise for Prefect
+        logger.exception("Failed while scanning SFTP server: %s", exc)
+        raise
+    finally:
+        if srv is not None:
+            srv.close()
+            logger.info("SFTP connection closed")
 
-# 2.1.1 If there's no "working" directory smartly do the same one level above
-        else:
-                f.write(srv.pwd)
-                f.write("\n")
-                wrkdir = srv.listdir_attr()
-		
-                if not wrkdir: f.write("All files have been processed\n")
-
-                else:
-                        for j in wrkdir: f.write("%s\n" % j)
-				
-# 2.4 Efficiently return to root directory to star again
-        srv.cwd("/")
-
-# Obsessively count the program execution
-split_time = time.monotonic()
-
-print(timedelta(seconds=split_time - start_time))
-
-split = str(timedelta(seconds=split_time - start_time))
-
-f.write("\nThis monitoring took: ")
-f.write(split)
-
-# Support
-f.write("\n\nFeedback: jgarciar@its.jnj.com\n")
-
-# Politely close the SFTP connection
-srv.close()
+    return "\n".join(report_lines)
 
 
-# creates SMTP session 
-s = smtplib.SMTP(mailHost, port)
+@task
+def build_body(
+    config: AppConfig,
+    scan_text: str,
+    current_time: datetime.datetime,
+    elapsed: timedelta,
+) -> str:
+    """Assemble the full e-mail body and persist it to ``config.body_file``.
 
-s.ehlo()  
-# start TLS for security  
-s.starttls() 
+    Args:
+        config: The application configuration.
+        scan_text: The report produced by :func:`scan_sftp`.
+        current_time: Timestamp to display in the report header.
+        elapsed: Time spent scanning the SFTP server.
 
-# Authentication 
-s.login(mailUser, mailPasswd) 
-  
-# return to beginning of the file
-f.seek(0)
+    Returns:
+        The full e-mail body as a string.
+    """
+    lines: list[str] = [
+        "Mbox Monitor & Support",
+        f"Version {VERSION}",
+        f"Current time is: {current_time}",
+        "",
+        scan_text,
+        "",
+        f"This monitoring took: {elapsed}",
+        "",
+        f"Feedback: {config.feedback_email}",
+        "",
+    ]
+    body = "\n".join(lines)
 
-# building the message like LEGO bricks
-msg = MIMEText(f.read())
+    try:
+        with open(config.body_file, "w", encoding="utf-8") as handle:
+            handle.write(body)
+        logger.info("Report written to %s", config.body_file)
+    except OSError as exc:
+        logger.exception("Could not write body file: %s", exc)
+        raise
 
-# me == the sender's email address
-# you == the recipient's email address
-msg['Subject'] = 'Mbox Monitor and Support'
-msg['From'] = 'Mbox Monitor and Support'
-msg['To'] = ", ".join(to)
-msg['Cc'] = ", ".join(cc)
+    return body
 
-  
-# sending the mail 
-s.sendmail(mailUser, (to+cc) , msg.as_string())
 
-# terminating the SMTP session 
-s.close() 
+@task
+def send_email(config: AppConfig, body: str) -> None:
+    """Send the report by e-mail through the configured SMTP server.
 
-# Close the file
-f.close()
+    Args:
+        config: The application configuration.
+        body: The full e-mail body to send.
+    """
+    msg = MIMEText(body)
+    msg["Subject"] = config.mail_subject
+    msg["From"] = config.mail_from
+    msg["To"] = config.mail_to
+    msg["Cc"] = config.mail_cc
 
-# Stop the application for 6 hours
-print("dary!")
+    recipients = [config.mail_to]
+    if config.mail_cc:
+        recipients.append(config.mail_cc)
 
-# Stop counting execution time
-end_time = time.monotonic()
+    server: Optional[smtplib.SMTP] = None
+    try:
+        server = smtplib.SMTP(config.mail_host, config.mail_port)
+        server.ehlo()
+        server.starttls()
+        server.login(config.mail_user, config.mail_passwd)
+        server.sendmail(config.mail_user, recipients, msg.as_string())
+        logger.info("Notification e-mail sent to %s", ", ".join(recipients))
+    except Exception as exc:  # noqa: BLE001 - log and re-raise for Prefect
+        logger.exception("Failed to send notification e-mail: %s", exc)
+        raise
+    finally:
+        if server is not None:
+            server.close()
+            logger.info("SMTP connection closed")
 
-excess = end_time - start_time
 
-# send to sleep for 6 hours minus the excess time
-time.sleep(segs - excess)
+# ---------------------------------------------------------------------------
+# Flow
+# ---------------------------------------------------------------------------
+@flow(name="mbox-monitor-flow")
+def mbox_monitor_flow() -> None:
+    """Run a single M-Box monitoring cycle.
+
+    Loads configuration from the environment, scans the SFTP server, builds
+    the report, sends the notification e-mail and logs the total elapsed
+    time. The 6-hour cadence is applied through a Prefect deployment
+    schedule, not inside this flow.
+    """
+    logger.info("Starting Mbox Monitor & Support v%s", VERSION)
+
+    config = load_config()
+    tz = timezone(config.tz_name)
+    current_time = datetime.datetime.now(tz)
+
+    start_time = time.monotonic()
+    scan_text = scan_sftp(config)
+    elapsed = timedelta(seconds=time.monotonic() - start_time)
+
+    body = build_body(config, scan_text, current_time, elapsed)
+    send_email(config, body)
+
+    logger.info("Mbox Monitor & Support cycle completed")
+
+
+if __name__ == "__main__":
+    mbox_monitor_flow()
